@@ -402,8 +402,40 @@ export default function ERP() {
         </div>
         <button style={{ margin: '18px 0 16px 0', width: '80%', background: ACCENT_BLUE, color: '#fff', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 16, padding: '12px 0', boxShadow: '0 2px 8px #2563eb22', cursor: 'pointer' }} onClick={() => setShowModal(true)}>Create New</button>
         <nav style={{ width: '100%' }}>
-          {sidebarItems.map((item, idx) => (
-            <div key={item.label} style={{ display: 'flex', alignItems: 'center', padding: '12px 32px', fontWeight: 600, fontSize: 16, color: idx === activeSidebar ? ACCENT_BLUE : TEXT_LIGHT, background: idx === activeSidebar ? '#232526' : 'none', borderLeft: idx === activeSidebar ? `4px solid ${ACCENT_BLUE}` : '4px solid transparent', cursor: 'pointer', transition: 'background 0.2s' }} onClick={() => setActiveSidebar(idx)}>
+          {[...sidebarItems, { icon: '🤖', label: 'Narad AI', isNarad: true }].map((item, idx) => (
+            <div
+              key={item.label}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '12px 32px',
+                fontWeight: 600,
+                fontSize: 16,
+                color: (idx === activeSidebar && !item.isNarad) ? ACCENT_BLUE : TEXT_LIGHT,
+                background: (idx === activeSidebar && !item.isNarad) ? '#232526' : 'none',
+                borderLeft: (idx === activeSidebar && !item.isNarad) ? `4px solid ${ACCENT_BLUE}` : '4px solid transparent',
+                cursor: 'pointer',
+                transition: 'background 0.2s, color 0.2s, border-left 0.2s',
+              }}
+              onClick={() => item.isNarad ? navigate('/chatbot') : setActiveSidebar(idx)}
+              onMouseOver={e => {
+                e.currentTarget.style.background = '#232526';
+                e.currentTarget.style.color = ACCENT_BLUE;
+                e.currentTarget.style.borderLeft = `4px solid ${ACCENT_BLUE}`;
+              }}
+              onMouseOut={e => {
+                if ((idx === activeSidebar && !item.isNarad)) {
+                  e.currentTarget.style.background = '#232526';
+                  e.currentTarget.style.color = ACCENT_BLUE;
+                  e.currentTarget.style.borderLeft = `4px solid ${ACCENT_BLUE}`;
+                } else {
+                  e.currentTarget.style.background = 'none';
+                  e.currentTarget.style.color = TEXT_LIGHT;
+                  e.currentTarget.style.borderLeft = '4px solid transparent';
+                }
+              }}
+              title={item.isNarad ? 'Go to Narad AI Chatbot' : undefined}
+            >
               <span style={{ fontSize: 20, marginRight: 16 }}>{item.icon}</span> {item.label}
             </div>
           ))}
@@ -1166,31 +1198,100 @@ function BarChart({ data, width }) {
   const gap = 18;
   // Calculate bar width so all bars + gaps fit in svgWidth
   const barW = (svgWidth - gap * (n + 1)) / n;
+
+  // Tooltip state
+  const [tooltip, setTooltip] = React.useState({ visible: false, x: 0, y: 0, data: null });
+  const svgRef = React.useRef();
+
+  // Helper for tooltip position
+  function getTooltipPos(x, y) {
+    // Offset tooltip above the bar, centered
+    return { left: x, top: y - 60 };
+  }
+
   return (
-    <svg viewBox={`0 0 ${svgWidth} ${svgHeight}`} width="100%" height="100%" style={{ display: 'block' }}>
-      {data.map((d, i) => {
-        let y = svgHeight - 40;
-        const hCompleted = (d.completed / max) * (svgHeight - 80);
-        const hProgress = (d.progress / max) * (svgHeight - 80);
-        const hTodo = (d.pending / max) * (svgHeight - 80);
-        const hCritical = (d.critical / max) * (svgHeight - 80);
-        const x = gap + i * (barW + gap);
-        return (
-          <g key={d.date}>
-            {/* Completed */}
-            <rect x={x} y={y - hCompleted} width={barW} height={hCompleted} fill={ACCENT_GREEN} />
-            {/* In Progress */}
-            <rect x={x} y={y - hCompleted - hProgress} width={barW} height={hProgress} fill={ACCENT_BLUE} />
-            {/* Pending */}
-            <rect x={x} y={y - hCompleted - hProgress - hTodo} width={barW} height={hTodo} fill={ACCENT_YELLOW} />
-            {/* Critical */}
-            <rect x={x} y={y - hCompleted - hProgress - hTodo - hCritical} width={barW} height={hCritical} fill={ACCENT_RED} />
-            {/* Date label */}
-            <text x={x + barW / 2} y={svgHeight - 16} textAnchor="middle" fontSize={15} fill="#888">{d.date}</text>
-          </g>
-        );
-      })}
-    </svg>
+    <div style={{ position: 'relative', width: '100%', height: svgHeight }}>
+      <svg ref={svgRef} viewBox={`0 0 ${svgWidth} ${svgHeight}`} width="100%" height="100%" style={{ display: 'block' }}>
+        {data.map((d, i) => {
+          let y = svgHeight - 40;
+          const hCompleted = (d.completed / max) * (svgHeight - 80);
+          const hProgress = (d.progress / max) * (svgHeight - 80);
+          const hTodo = (d.pending / max) * (svgHeight - 80);
+          const hCritical = (d.critical / max) * (svgHeight - 80);
+          const x = gap + i * (barW + gap);
+          // For tooltip: get bar center
+          const barCenterX = x + barW / 2;
+          const barTopY = y - hCompleted - hProgress - hTodo - hCritical;
+          return (
+            <g key={d.date}
+              onMouseEnter={e => {
+                const svgRect = svgRef.current.getBoundingClientRect();
+                setTooltip({
+                  visible: true,
+                  x: barCenterX * (svgRect.width / svgWidth),
+                  y: barTopY * (svgRect.height / svgHeight),
+                  data: d
+                });
+              }}
+              onMouseMove={e => {
+                // Keep tooltip above the bar
+                const svgRect = svgRef.current.getBoundingClientRect();
+                setTooltip(t => t.visible ? {
+                  ...t,
+                  x: barCenterX * (svgRect.width / svgWidth),
+                  y: barTopY * (svgRect.height / svgHeight)
+                } : t);
+              }}
+              onMouseLeave={() => setTooltip({ visible: false, x: 0, y: 0, data: null })}
+              style={{ cursor: 'pointer' }}
+            >
+              {/* Completed */}
+              <rect x={x} y={y - hCompleted} width={barW} height={hCompleted} fill={ACCENT_GREEN} />
+              {/* In Progress */}
+              <rect x={x} y={y - hCompleted - hProgress} width={barW} height={hProgress} fill={ACCENT_BLUE} />
+              {/* Pending */}
+              <rect x={x} y={y - hCompleted - hProgress - hTodo} width={barW} height={hTodo} fill={ACCENT_YELLOW} />
+              {/* Critical */}
+              <rect x={x} y={y - hCompleted - hProgress - hTodo - hCritical} width={barW} height={hCritical} fill={ACCENT_RED} />
+              {/* Date label */}
+              <text x={x + barW / 2} y={svgHeight - 16} textAnchor="middle" fontSize={15} fill="#888">{d.date}</text>
+            </g>
+          );
+        })}
+      </svg>
+      {/* Tooltip */}
+      {tooltip.visible && tooltip.data && (
+        <div
+          style={{
+            position: 'absolute',
+            left: tooltip.x,
+            top: tooltip.y,
+            transform: 'translate(-50%, -100%)',
+            background: 'rgba(255,255,255,0.98)',
+            border: `2px solid #2563eb`,
+            borderRadius: 12,
+            boxShadow: '0 4px 24px 0 #2563eb22',
+            padding: '14px 22px',
+            zIndex: 10,
+            pointerEvents: 'none',
+            minWidth: 160,
+            fontSize: 15,
+            color: '#222',
+            fontWeight: 500,
+            transition: 'opacity 0.15s',
+            opacity: tooltip.visible ? 1 : 0
+          }}
+        >
+          <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 6, color: '#2563eb' }}>{tooltip.data.date}</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <span><span style={{ color: ACCENT_YELLOW, fontWeight: 700 }}>●</span> Pending: <b>{tooltip.data.pending}</b></span>
+            <span><span style={{ color: ACCENT_BLUE, fontWeight: 700 }}>●</span> In Progress: <b>{tooltip.data.progress}</b></span>
+            <span><span style={{ color: ACCENT_GREEN, fontWeight: 700 }}>●</span> Completed: <b>{tooltip.data.completed}</b></span>
+            <span><span style={{ color: ACCENT_RED, fontWeight: 700 }}>●</span> Critical: <b>{tooltip.data.critical}</b></span>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
