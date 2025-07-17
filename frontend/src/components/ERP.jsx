@@ -3,7 +3,7 @@ import logo from '../assets/logo.png';
 import minister from '../assets/minister.png';
 import { FaHospitalSymbol, FaProcedures, FaAmbulance, FaExchangeAlt, FaVials, FaUserMd, FaHeartbeat, FaBoxOpen, FaExclamationTriangle, FaTools, FaSyringe, FaUsers, FaCalendarAlt, FaChartLine, FaThermometerHalf, FaTruck, FaBoxes, FaBullhorn, FaBell } from 'react-icons/fa';
 import { GoogleMap, Marker, InfoWindow, useJsApiLoader } from '@react-google-maps/api';
-import { ResponsiveContainer, BarChart as ReBarChart, XAxis, YAxis, Bar } from 'recharts';
+import { ResponsiveContainer, BarChart as ReBarChart, XAxis, YAxis, Bar, Tooltip as ReTooltip } from 'recharts';
 import { useNavigate } from 'react-router-dom';
 import kadamri from '../assets/kadamri.png';
 import nitin from '../assets/nitin.png';
@@ -285,6 +285,8 @@ export default function ERP() {
     ],
   };
 
+  const [showPendingPopup, setShowPendingPopup] = useState(false);
+
   useEffect(() => {
     function handleClickOutside(e) {
       if (notificationRef.current && !notificationRef.current.contains(e.target)) {
@@ -347,7 +349,7 @@ export default function ERP() {
             <h3 style={{ fontWeight: 800, fontSize: 24, marginBottom: 12 }}>Active Health Initiatives</h3>
             <ul style={{ paddingLeft: 18, color: '#333', fontSize: 16 }}>
               {filteredProjects.map(p => (
-                <li key={p.name}><b>{p.name}</b></li>
+                <li key={p.name}>{p.name}</li>
               ))}
             </ul>
           </div>
@@ -615,11 +617,26 @@ export default function ERP() {
                 color={card.color}
                 label={card.label}
                 value={card.value}
-                onClick={() => setOpenCard(idx)}
+                onClick={() => {
+                  if (idx === 2) setShowPendingPopup(true);
+                  else setOpenCard(idx);
+                }}
                 pro
               />
             ))}
           </div>
+          {showPendingPopup && (
+            <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(24,26,27,0.55)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setShowPendingPopup(false)}>
+              <div style={{ background: '#fff', borderRadius: 18, padding: 32, minWidth: 340, boxShadow: '0 8px 32px 0 rgba(37,99,235,0.18)', position: 'relative' }} onClick={e => e.stopPropagation()}>
+                <button onClick={() => setShowPendingPopup(false)} style={{ position: 'absolute', top: 14, right: 14, background: '#eee', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 18, color: '#222', padding: '2px 12px', cursor: 'pointer' }}>×</button>
+                <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 18 }}>Pending Approvals</div>
+                <ul style={{ paddingLeft: 18, color: '#333', fontSize: 16 }}>
+                  <li>Tender for Mumbai Central PHC Upgrade</li>
+                  <li>Supplement Vaccine Buying for Nagpur</li>
+                </ul>
+              </div>
+            </div>
+          )}
           {/* Projects & Tasks Overview */}
           <div style={{ display: 'flex', gap: 24, marginBottom: 32 }}>
             {activeSidebar === 1 ? (
@@ -639,12 +656,13 @@ export default function ERP() {
                   <ReBarChart data={totalBedsByDistrict} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                     <XAxis dataKey="name" fontSize={13} tick={{ fill: "#4a6fa1" }} />
                     <YAxis fontSize={13} tick={{ fill: "#4a6fa1" }} />
-                    <Bar dataKey="General" fill="#2563eb" name="General Beds" />
-                    <Bar dataKey="OccupiedGeneral" fill="#b3d8fd" name="Occupied General" />
-                    <Bar dataKey="ICU" fill="#ef4444" name="ICU Beds" />
-                    <Bar dataKey="OccupiedICU" fill="#fbbf24" name="Occupied ICU" />
-                    <Bar dataKey="Oxygen" fill="#27ae60" name="Oxygen Beds" />
-                    <Bar dataKey="OccupiedOxygen" fill="#a7f3d0" name="Occupied Oxygen" />
+                    <ReTooltip cursor={{ fill: 'rgba(37,99,235,0.08)' }} contentStyle={{ borderRadius: 12, fontWeight: 600, fontSize: 15, boxShadow: '0 2px 12px #2563eb22' }} />
+                    <Bar dataKey="General" fill="#2563eb" name="General Beds" activeBar={{ fill: '#1746a2' }} />
+                    <Bar dataKey="OccupiedGeneral" fill="#b3d8fd" name="Occupied General" activeBar={{ fill: '#2563eb' }} />
+                    <Bar dataKey="ICU" fill="#ef4444" name="ICU Beds" activeBar={{ fill: '#b91c1c' }} />
+                    <Bar dataKey="OccupiedICU" fill="#fbbf24" name="Occupied ICU" activeBar={{ fill: '#b45309' }} />
+                    <Bar dataKey="Oxygen" fill="#27ae60" name="Oxygen Beds" activeBar={{ fill: '#14532d' }} />
+                    <Bar dataKey="OccupiedOxygen" fill="#a7f3d0" name="Occupied Oxygen" activeBar={{ fill: '#059669' }} />
                   </ReBarChart>
                 </ResponsiveContainer>
                 <div style={{ display: 'flex', gap: 18, marginTop: 10, alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>

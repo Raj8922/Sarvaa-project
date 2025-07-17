@@ -26,11 +26,11 @@ const taskStatusData = [
 ];
 
 const fundData = [
-  { name: "TB-Free Panchayats Initiative", Allocated: 5.2, Utilized: 4.4, OverBudget: 0, Remaining: 5.2 - 4.4 },
-  { name: "Cancer Daycare Centres", Allocated: 12.8, Utilized: 8.3, OverBudget: 0, Remaining: 12.8 - 8.3 },
-  { name: "CHO Management System", Allocated: 3.5, Utilized: 3.2, OverBudget: 0, Remaining: 3.5 - 3.2 },
-  { name: "Rural Health Outreach", Allocated: 8, Utilized: 3.6, OverBudget: 0, Remaining: 8 - 3.6 },
-  { name: "Digital Health Records", Allocated: 15, Utilized: 16.5, OverBudget: 1.5, Remaining: 0 },
+  { name: "TB-Free Panchayats Initiative", Allocated: 5.2, Utilized: 4.4, UtilizedWithinBudget: 4.4, OverBudget: 0 },
+  { name: "Cancer Daycare Centres", Allocated: 12.8, Utilized: 8.3, UtilizedWithinBudget: 8.3, OverBudget: 0 },
+  { name: "CHO Management System", Allocated: 3.5, Utilized: 3.2, UtilizedWithinBudget: 3.2, OverBudget: 0 },
+  { name: "Rural Health Outreach", Allocated: 8, Utilized: 3.6, UtilizedWithinBudget: 3.6, OverBudget: 0 },
+  { name: "Digital Health Records", Allocated: 15, Utilized: 16.5, UtilizedWithinBudget: 15, OverBudget: 1.5 },
 ];
 
 const projectTable = [
@@ -220,29 +220,30 @@ const ProjectCampaignDashboard = () => {
               layout="vertical"
               margin={{ top: 10, right: 40, left: 40, bottom: 10 }}
               barCategoryGap={18}
+              stackOffset="none"
             >
               <XAxis type="number" domain={[0, 'dataMax + 2']} tick={{ fontSize: 15 }} tickFormatter={v => `${v} Cr`} />
               <YAxis type="category" dataKey="name" tick={{ fontSize: 17, fontWeight: 700, fill: '#222' }} width={180} />
               <ReTooltip formatter={(v, name, props) => {
                 if (name === 'Allocated') return [`₹${v} Cr`, 'Allocated'];
-                if (name === 'Utilized') return [`₹${v} Cr`, 'Utilized'];
+                if (name === 'UtilizedWithinBudget') return [`₹${v} Cr`, 'Utilized'];
                 if (name === 'OverBudget') return [`₹${v} Cr`, 'Over Budget'];
                 return v;
               }} />
-              <Bar dataKey="Allocated" fill="#2563eb" radius={[8, 8, 8, 8]} barSize={18} >
-                <LabelList dataKey="Allocated" position="right" formatter={v => `${v} Cr`} style={{ fontWeight: 700, fontSize: 15, fill: '#2563eb' }} />
+              {/* Allocated as a reference bar (faint) */}
+              <Bar dataKey="Allocated" fill="#2563eb" radius={[8, 8, 8, 8]} barSize={18} isAnimationActive={false} opacity={0.18} />
+              {/* Utilized within budget (green) + Over budget (red) as a stack */}
+              <Bar dataKey="UtilizedWithinBudget" stackId="a" fill="#14b8a6" radius={[8, 8, 8, 8]} barSize={18} >
+                <LabelList dataKey="UtilizedWithinBudget" position="right" formatter={v => `${v} Cr`} style={{ fontWeight: 700, fontSize: 15, fill: '#14b8a6' }} />
               </Bar>
-              <Bar dataKey="Utilized" fill="#14b8a6" radius={[8, 8, 8, 8]} barSize={18} >
-                <LabelList dataKey="Utilized" position="right" formatter={v => `${v} Cr`} style={{ fontWeight: 700, fontSize: 15, fill: '#14b8a6' }} />
-              </Bar>
-              <Bar dataKey="OverBudget" fill="#e53935" radius={[8, 8, 8, 8]} barSize={18} >
+              <Bar dataKey="OverBudget" stackId="a" fill="#e53935" radius={[8, 8, 8, 8]} barSize={18} >
                 <LabelList dataKey="OverBudget" position="right" formatter={v => v > 0 ? `${v} Cr (Over)` : ''} style={{ fontWeight: 700, fontSize: 15, fill: '#e53935' }} />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
           {/* Custom Legend - visually distinct */}
           <div style={{ display: 'flex', gap: 18, marginTop: 10, alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 18, height: 18, background: '#2563eb', borderRadius: 6, display: 'inline-block', marginRight: 4, border: '2px solid #2563eb' }}></span>Allocated</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 18, height: 18, background: '#2563eb', borderRadius: 6, display: 'inline-block', marginRight: 4, border: '2px solid #2563eb', opacity: 0.18 }}></span>Allocated</span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 18, height: 18, background: '#14b8a6', borderRadius: 6, display: 'inline-block', marginRight: 4, border: '2px solid #14b8a6' }}></span>Utilized</span>
             <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 18, height: 18, background: '#e53935', borderRadius: 6, display: 'inline-block', marginRight: 4, border: '2px solid #e53935' }}></span>Over Budget</span>
           </div>
