@@ -16,6 +16,10 @@ import SearchResults from './SearchResults';
 import MinisterProfileEdit from './components/MinisterProfileEdit';
 import naradVideo from './assets/video.mp4';
 import logo from './assets/logo.png';
+import projectCampaignVideo from './assets/Projectcampaign.mp4';
+import budgetTrackerVideo from './assets/BudgetTracker.mp4';
+import liveTrackerVideo from './assets/liveTracker.mp4';
+import ministryVideo from './assets/ministry.mp4';
 
 const BG_DARK = '#181A1B';
 const TEXT_LIGHT = '#E5E7EB';
@@ -67,6 +71,29 @@ function AppContent() {
   React.useEffect(() => {
     setTimeout(() => setTitleVisible(true), 200);
   }, []);
+
+  const customVideos = [
+    {
+      title: 'Project Campaign Dashboard',
+      src: projectCampaignVideo,
+      desc: 'A walkthrough of the Project Campaign Dashboard for Maharashtra Health Department.'
+    },
+    {
+      title: 'Budget Tracker',
+      src: budgetTrackerVideo,
+      desc: 'Track and analyze health department budgets in real time.'
+    },
+    {
+      title: 'Live Tracker',
+      src: liveTrackerVideo,
+      desc: 'Live tracking of health initiatives and progress across districts.'
+    },
+    {
+      title: 'Ministry Overview',
+      src: ministryVideo,
+      desc: 'Overview of ministry operations and key health programs.'
+    },
+  ];
 
   return (
     <div className="min-vh-100 d-flex flex-column position-relative" style={{ background: BG_DARK }}>
@@ -317,116 +344,69 @@ function AppContent() {
                 <div className="container" style={{ position: 'relative', zIndex: 1 }}>
                   <h2 className="mb-4 text-center" style={{ fontWeight: 700, color: TEXT_WHITE, fontSize: '2.5rem', letterSpacing: '-1px' }}>Live Dashboards</h2>
                   <div className="video-carousel" style={{ position: 'relative', overflow: 'hidden', padding: '20px 0' }}>
-                    <div className="video-track" style={{ display: 'flex', animation: 'videoRotate 12s linear infinite' }}>
-                      {/* First set of videos with info */}
-                      {[
-                        {
-                          title: 'Health Analytics Dashboard',
-                          src: 'https://www.youtube.com/embed/7Q1rV9pQK6A?rel=0&showinfo=0&controls=1',
-                          desc: 'Visualize and analyze health data trends across Maharashtra in real time.'
-                        },
-                        {
-                          title: 'Patient Monitoring System',
-                          src: 'https://www.youtube.com/embed/QwQ1H6rO5yA?rel=0&showinfo=0&controls=1',
-                          desc: 'Track patient vitals and status for efficient hospital management.'
-                        },
-                        {
-                          title: 'Emergency Response Dashboard',
-                          src: 'https://www.youtube.com/embed/6QbH1gk1K2A?rel=0&showinfo=0&controls=1',
-                          desc: 'Monitor and coordinate emergency medical responses efficiently.'
-                        },
-                        {
-                          title: 'Resource Management Dashboard',
-                          src: 'https://www.youtube.com/embed/Qn6Q0Qv5QnA?rel=0&showinfo=0&controls=1',
-                          desc: 'Manage and allocate medical resources and supplies smartly.'
-                        },
-                      ].map((video, idx) => (
+                    <div className="video-track" style={{ display: 'flex', animation: 'videoMove 18s linear infinite', gap: 40, minWidth: 'max-content' }}>
+                      {[...customVideos, ...customVideos].map((video, idx) => (
                         <div
                           key={video.title + idx}
                           className="video-card"
-                          style={{ minWidth: '400px', margin: '0 20px', flexShrink: 0, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'none' }}
+                          style={{
+                            width: '400px',
+                            height: '320px',
+                            margin: '0 20px',
+                            flexShrink: 0,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            background: 'none',
+                          }}
                           onClick={() => setShowVideoModal(video)}
                         >
-                          <div style={{ background: CARD_DARK, borderRadius: '20px', boxShadow: SHADOW, padding: 0, overflow: 'hidden', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', pointerEvents: 'auto' }}>
-                            <div style={{ width: '100%', background: 'rgba(255,255,255,0.02)', padding: '18px 0 10px 0', textAlign: 'center', fontWeight: 700, color: TEXT_WHITE, fontSize: 22, borderBottom: `1px solid ${BG_DARK}` }}>
+                          <div style={{
+                            background: CARD_DARK,
+                            borderRadius: '20px',
+                            boxShadow: SHADOW,
+                            padding: 0,
+                            overflow: 'hidden',
+                            width: '100%',
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            pointerEvents: 'auto',
+                          }}>
+                            <div style={{
+                              width: '100%',
+                              background: 'rgba(255,255,255,0.02)',
+                              padding: '18px 0 10px 0',
+                              textAlign: 'center',
+                              fontWeight: 700,
+                              color: TEXT_WHITE,
+                              fontSize: 22,
+                              borderBottom: `1px solid ${BG_DARK}`
+                            }}>
                               {video.title}
                             </div>
-                            {video.src.includes('youtube.com') ? (
-                              <iframe
-                                src={video.src}
-                                title={video.title}
-                                style={{ width: '100%', height: '180px', background: '#000', border: 'none', pointerEvents: 'auto' }}
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                              />
-                            ) : (
-                              <video
-                                src={video.src}
-                                style={{ width: '100%', height: '180px', objectFit: 'cover', background: '#000', marginBottom: 0 }}
-                                autoPlay
-                                loop
-                                muted
-                                playsInline
-                              />
-                            )}
-                            <div style={{ padding: '16px 18px 18px 18px', color: TEXT_LIGHT, fontSize: 16, textAlign: 'center', minHeight: 60 }}>
-                              {video.desc}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      {/* Duplicate set for seamless loop */}
-                      {[
-                        {
-                          title: 'Health Analytics Dashboard',
-                          src: 'https://www.youtube.com/embed/7Q1rV9pQK6A?rel=0&showinfo=0&controls=1',
-                          desc: 'Visualize and analyze health data trends across Maharashtra in real time.'
-                        },
-                        {
-                          title: 'Patient Monitoring System',
-                          src: 'https://www.youtube.com/embed/QwQ1H6rO5yA?rel=0&showinfo=0&controls=1',
-                          desc: 'Track patient vitals and status for better hospital management.'
-                        },
-                        {
-                          title: 'Emergency Response Dashboard',
-                          src: 'https://www.youtube.com/embed/6QbH1gk1K2A?rel=0&showinfo=0&controls=1',
-                          desc: 'Monitor and coordinate emergency medical responses efficiently.'
-                        },
-                        {
-                          title: 'Resource Management Dashboard',
-                          src: 'https://www.youtube.com/embed/Qn6Q0Qv5QnA?rel=0&showinfo=0&controls=1',
-                          desc: 'Manage and allocate medical resources and supplies smartly.'
-                        },
-                      ].map((video, idx) => (
-                        <div
-                          key={video.title + 'dup' + idx}
-                          className="video-card"
-                          style={{ minWidth: '400px', margin: '0 20px', flexShrink: 0, cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'none' }}
-                          onClick={() => setShowVideoModal(video)}
-                        >
-                          <div style={{ background: CARD_DARK, borderRadius: '20px', boxShadow: SHADOW, padding: 0, overflow: 'hidden', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', pointerEvents: 'auto' }}>
-                            <div style={{ width: '100%', background: 'rgba(255,255,255,0.02)', padding: '18px 0 10px 0', textAlign: 'center', fontWeight: 700, color: TEXT_WHITE, fontSize: 22, borderBottom: `1px solid ${BG_DARK}` }}>
-                              {video.title}
-                            </div>
-                            {video.src.includes('youtube.com') ? (
-                              <iframe
-                                src={video.src}
-                                title={video.title}
-                                style={{ width: '100%', height: '180px', background: '#000', border: 'none', pointerEvents: 'auto' }}
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                              />
-                            ) : (
-                              <video
-                                src={video.src}
-                                style={{ width: '100%', height: '180px', objectFit: 'cover', background: '#000', marginBottom: 0 }}
-                                autoPlay
-                                loop
-                                muted
-                                playsInline
-                              />
-                            )}
-                            <div style={{ padding: '16px 18px 18px 18px', color: TEXT_LIGHT, fontSize: 16, textAlign: 'center', minHeight: 60 }}>
+                            <video
+                              src={video.src}
+                              style={{ width: '100%', height: '180px', objectFit: 'cover', background: '#000', marginBottom: 0 }}
+                              autoPlay
+                              loop
+                              muted
+                              playsInline
+                            />
+                            <div style={{
+                              padding: '16px 18px 18px 18px',
+                              color: TEXT_LIGHT,
+                              fontSize: 16,
+                              textAlign: 'center',
+                              minHeight: 60,
+                              flex: 1,
+                              width: '100%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}>
                               {video.desc}
                             </div>
                           </div>
@@ -500,25 +480,15 @@ function AppContent() {
               </div>
               <div className="modal-body pt-0 p-0">
                 <div style={{ padding: '18px 24px', color: TEXT_LIGHT, fontSize: 18, textAlign: 'center' }}>{showVideoModal.desc}</div>
-                {showVideoModal.src.includes('youtube.com') ? (
-                  <iframe
-                    src={showVideoModal.src}
-                    title={showVideoModal.title}
-                    style={{ width: '100%', height: '70vh', background: '#000', border: 'none', borderRadius: '0 0 16px 16px', pointerEvents: 'auto' }}
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                ) : (
-                  <video
-                    src={showVideoModal.src}
-                    style={{ width: '100%', height: '70vh', objectFit: 'cover', background: '#000' }}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    controls
-                  />
-                )}
+                <video
+                  src={showVideoModal.src}
+                  style={{ width: '100%', height: '70vh', objectFit: 'cover', background: '#000' }}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  controls
+                />
               </div>
             </div>
           </div>
@@ -539,13 +509,9 @@ function AppContent() {
           }
         }
         
-        @keyframes videoRotate {
-          0% {
-            transform: translateX(-50%);
-          }
-          100% {
-            transform: translateX(0);
-          }
+        @keyframes videoMove {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
         }
         
         .helpline-carousel {

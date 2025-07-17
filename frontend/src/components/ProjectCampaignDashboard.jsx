@@ -26,11 +26,11 @@ const taskStatusData = [
 ];
 
 const fundData = [
-  { name: "TB-Free Panchayats Initiative", Allocated: 5.2, Utilized: 4.4, Remaining: 5.2 - 4.4 },
-  { name: "Cancer Daycare Centres", Allocated: 12.8, Utilized: 8.3, Remaining: 12.8 - 8.3 },
-  { name: "CHO Management System", Allocated: 3.5, Utilized: 3.2, Remaining: 3.5 - 3.2 },
-  { name: "Rural Health Outreach", Allocated: 8, Utilized: 3.6, Remaining: 8 - 3.6 },
-  { name: "Digital Health Records", Allocated: 15, Utilized: 4.5, Remaining: 15 - 4.5 },
+  { name: "TB-Free Panchayats Initiative", Allocated: 5.2, Utilized: 4.4, OverBudget: 0, Remaining: 5.2 - 4.4 },
+  { name: "Cancer Daycare Centres", Allocated: 12.8, Utilized: 8.3, OverBudget: 0, Remaining: 12.8 - 8.3 },
+  { name: "CHO Management System", Allocated: 3.5, Utilized: 3.2, OverBudget: 0, Remaining: 3.5 - 3.2 },
+  { name: "Rural Health Outreach", Allocated: 8, Utilized: 3.6, OverBudget: 0, Remaining: 8 - 3.6 },
+  { name: "Digital Health Records", Allocated: 15, Utilized: 16.5, OverBudget: 1.5, Remaining: 0 },
 ];
 
 const projectTable = [
@@ -53,12 +53,25 @@ const caseStudyLinks = {
   "Managing Chief Health Officers": "https://www.pria.org/knowledge_resource/Women_Leaders_in_Panchayats_1.pdf"
 };
 
+const caseStudySummaries = {
+  "TB-Free Panchayats Initiative": "A pioneering campaign to eliminate tuberculosis in rural Maharashtra by empowering local panchayats. Achieved a 30% increase in early TB detection and improved community awareness.",
+  "Cancer Daycare Centre Tracking": "A digital initiative to monitor and optimize cancer daycare services across the state. Improved patient tracking, resource allocation, and treatment outcomes.",
+  "Managing Chief Health Officers": "A leadership program for Chief Health Officers, focusing on capacity building, data-driven decision making, and effective public health management."
+};
+
 const COLORS = ["#2e7d32", "#e0e0e0", "#1976d2", "#d32f2f", "#fbc02d", "#757575"];
 
 const slugify = str => str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
 const ProjectCampaignDashboard = () => {
   const [openCase, setOpenCase] = React.useState(null);
+  // Popup state for case study summary
+  const [hoveredCase, setHoveredCase] = React.useState(null);
+  const [popupPos, setPopupPos] = React.useState({ x: 0, y: 0 });
+  const [popupLoading, setPopupLoading] = React.useState(false);
+  const popupTimeout = React.useRef();
+  const [popupHovered, setPopupHovered] = React.useState(false);
+  const [popupExpanded, setPopupExpanded] = React.useState(false);
   // Calculate summary stats
   const totalAllocated = fundData.reduce((sum, p) => sum + p.Allocated, 0);
   const totalUtilized = fundData.reduce((sum, p) => sum + p.Utilized, 0);
@@ -200,73 +213,38 @@ const ProjectCampaignDashboard = () => {
               <span style={{ fontWeight: 700, fontSize: 18 }}>{utilizationPercent}%</span> Utilization
             </div>
           </div>
-          {/* Utilization progress bar */}
-          <div style={{ width: '100%', height: 14, background: '#e0e0e0', borderRadius: 8, marginBottom: 18, overflow: 'hidden', position: 'relative' }}>
-            <div style={{
-              width: `${utilizationPercent}%`,
-              height: '100%',
-              background: `linear-gradient(90deg, #1976d2 0%, #2e7d32 100%)`,
-              borderRadius: 8,
-              transition: 'width 0.7s cubic-bezier(.4,1.4,.6,1)',
-              boxShadow: '0 2px 8px #1976d233',
-            }} />
-            <span style={{ position: 'absolute', left: '50%', top: 0, transform: 'translateX(-50%)', fontSize: 13, color: '#183153', fontWeight: 600, lineHeight: '14px' }}>{utilizationPercent}%</span>
-          </div>
-          {/* Enhanced Bar Chart */}
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={fundData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-              <XAxis dataKey="name" fontSize={13} tick={{ fill: "#4a6fa1" }} interval={0} angle={-12} height={60} tickLine={false} />
-              <YAxis fontSize={13} tick={{ fill: "#4a6fa1" }} tickLine={false} />
-              <ReTooltip content={({ active, payload, label }) => {
-                if (!active || !payload || !payload.length) return null;
-                const d = payload[0].payload;
-                return (
-                  <div style={{ background: '#fff', border: '1.5px solid #e0e0e0', borderRadius: 10, boxShadow: '0 4px 24px #0002', padding: '12px 18px', minWidth: 180 }}>
-                    <div style={{ fontWeight: 700, color: '#1976d2', marginBottom: 4 }}>{label}</div>
-                    <div style={{ color: '#183153', fontSize: 15 }}><b>Allocated:</b> ₹{d.Allocated} Cr</div>
-                    <div style={{ color: '#2e7d32', fontSize: 15 }}><b>Utilized:</b> ₹{d.Utilized} Cr</div>
-                    <div style={{ color: '#fbc02d', fontSize: 15 }}><b>Remaining:</b> ₹{d.Remaining} Cr</div>
-                    <div style={{ color: '#888', fontSize: 14, marginTop: 6 }}>Utilization: <b>{Math.round((d.Utilized/d.Allocated)*100)}%</b></div>
-                  </div>
-                );
+          {/* Horizontal Bar Chart */}
+          <ResponsiveContainer width="100%" height={380}>
+            <BarChart
+              data={fundData}
+              layout="vertical"
+              margin={{ top: 10, right: 40, left: 40, bottom: 10 }}
+              barCategoryGap={18}
+            >
+              <XAxis type="number" domain={[0, 'dataMax + 2']} tick={{ fontSize: 15 }} tickFormatter={v => `${v} Cr`} />
+              <YAxis type="category" dataKey="name" tick={{ fontSize: 17, fontWeight: 700, fill: '#222' }} width={180} />
+              <ReTooltip formatter={(v, name, props) => {
+                if (name === 'Allocated') return [`₹${v} Cr`, 'Allocated'];
+                if (name === 'Utilized') return [`₹${v} Cr`, 'Utilized'];
+                if (name === 'OverBudget') return [`₹${v} Cr`, 'Over Budget'];
+                return v;
               }} />
-              <Bar dataKey="Allocated" fill="#1976d2" radius={[6, 6, 0, 0]}>
-                {fundData.map((entry, idx) => (
-                  <Cell key={`alloc-${idx}`} fill="#1976d2" />
-                ))}
-                <LabelList dataKey="Allocated" position="top" formatter={v => `₹${v} Cr`} style={{ fill: '#1976d2', fontWeight: 700, fontSize: 13 }} />
+              <Bar dataKey="Allocated" fill="#2563eb" radius={[8, 8, 8, 8]} barSize={18} >
+                <LabelList dataKey="Allocated" position="right" formatter={v => `${v} Cr`} style={{ fontWeight: 700, fontSize: 15, fill: '#2563eb' }} />
               </Bar>
-              <Bar dataKey="Remaining" fill="#bdbdbd" radius={[6, 6, 0, 0]}>
-                {fundData.map((entry, idx) => (
-                  <Cell key={`rem-${idx}`} fill="#bdbdbd" />
-                ))}
-                <LabelList dataKey="Remaining" position="top" formatter={v => `₹${v} Cr`} style={{ fill: '#bdbdbd', fontWeight: 700, fontSize: 13 }} />
+              <Bar dataKey="Utilized" fill="#14b8a6" radius={[8, 8, 8, 8]} barSize={18} >
+                <LabelList dataKey="Utilized" position="right" formatter={v => `${v} Cr`} style={{ fontWeight: 700, fontSize: 15, fill: '#14b8a6' }} />
               </Bar>
-              <Bar dataKey="Utilized" radius={[6, 6, 0, 0]}
-                >
-                {fundData.map((entry, idx) => {
-                  // Color gradient: green if >80%, yellow if 60-80%, red if <60%
-                  const percent = entry.Utilized / entry.Allocated;
-                  let color = '#2e7d32';
-                  if (percent < 0.6) color = '#d32f2f';
-                  else if (percent < 0.8) color = '#fbc02d';
-                  return <Cell key={`util-${idx}`} fill={color} />;
-                })}
-                <LabelList dataKey="Utilized" position="top" formatter={v => `₹${v} Cr`} style={{ fontWeight: 700, fontSize: 13 }} />
+              <Bar dataKey="OverBudget" fill="#e53935" radius={[8, 8, 8, 8]} barSize={18} >
+                <LabelList dataKey="OverBudget" position="right" formatter={v => v > 0 ? `${v} Cr (Over)` : ''} style={{ fontWeight: 700, fontSize: 15, fill: '#e53935' }} />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
           {/* Custom Legend - visually distinct */}
           <div style={{ display: 'flex', gap: 18, marginTop: 10, alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 18, height: 18, background: '#1976d2', borderRadius: 6, display: 'inline-block', marginRight: 4, border: '2px solid #1976d2' }}></span>Allocated
-            </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 18, height: 18, background: '#bdbdbd', borderRadius: 6, display: 'inline-block', marginRight: 4, border: '2px solid #bdbdbd' }}></span>Remaining
-            </span>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ width: 18, height: 18, background: 'linear-gradient(90deg,#2e7d32,#fbc02d,#d32f2f)', borderRadius: 6, display: 'inline-block', marginRight: 4, border: '2px solid #2e7d32' }}></span>Utilized
-            </span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 18, height: 18, background: '#2563eb', borderRadius: 6, display: 'inline-block', marginRight: 4, border: '2px solid #2563eb' }}></span>Allocated</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 18, height: 18, background: '#14b8a6', borderRadius: 6, display: 'inline-block', marginRight: 4, border: '2px solid #14b8a6' }}></span>Utilized</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ width: 18, height: 18, background: '#e53935', borderRadius: 6, display: 'inline-block', marginRight: 4, border: '2px solid #e53935' }}></span>Over Budget</span>
           </div>
         </div>
       </div>
@@ -322,9 +300,26 @@ const ProjectCampaignDashboard = () => {
               transition: 'background 0.15s',
               cursor: 'pointer',
               background: openCase === i ? '#f7fafd' : 'none',
+              position: 'relative',
             }}
-            onMouseOver={e => e.currentTarget.style.background = '#f0f6fb'}
-            onMouseOut={e => e.currentTarget.style.background = openCase === i ? '#f7fafd' : 'none'}
+            onMouseOver={e => {
+              e.currentTarget.style.background = '#f0f6fb';
+              setPopupPos({ x: e.clientX, y: e.clientY });
+              setPopupLoading(true);
+              setHoveredCase(c);
+              clearTimeout(popupTimeout.current);
+              popupTimeout.current = setTimeout(() => setPopupLoading(false), 1000);
+            }}
+            onMouseMove={e => setPopupPos({ x: e.clientX, y: e.clientY })}
+            onMouseLeave={() => {
+              setTimeout(() => {
+                if (!popupHovered) {
+                  setHoveredCase(null);
+                  setPopupLoading(false);
+                  clearTimeout(popupTimeout.current);
+                }
+              }, 60);
+            }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <span>{c}</span>
@@ -333,6 +328,155 @@ const ProjectCampaignDashboard = () => {
             {openCase === i && (
               <div style={{ color: '#4a6fa1', fontSize: 14, marginTop: 6 }}>
                 This is a brief summary of the case study: <b>{c}</b>. (You can expand this with more details or a link to a full report.)
+              </div>
+            )}
+            {/* Popup summary on hover */}
+            {hoveredCase === c && (
+              <div
+                style={{
+                  position: 'fixed',
+                  left: popupPos.x + 16,
+                  top: popupPos.y + 8,
+                  zIndex: 9999,
+                  minWidth: 280,
+                  maxWidth: 420,
+                  background: 'rgba(255,255,255,0.82)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1.5px solid #e0e0e0',
+                  borderRadius: 18,
+                  boxShadow: '0 8px 32px #2563eb22, 0 2px 8px #0001',
+                  padding: '0 0 18px 0',
+                  fontSize: 15,
+                  fontWeight: 500,
+                  pointerEvents: 'auto',
+                  transition: 'opacity 0.18s, transform 0.22s cubic-bezier(.4,1.4,.6,1)',
+                  opacity: 1,
+                  whiteSpace: 'pre-line',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  animation: 'popupSlideIn 0.32s cubic-bezier(.4,1.4,.6,1)',
+                }}
+                onMouseEnter={() => setPopupHovered(true)}
+                onMouseLeave={() => {
+                  setPopupHovered(false);
+                  setTimeout(() => {
+                    if (!popupHovered) {
+                      setHoveredCase(null);
+                      setPopupLoading(false);
+                      clearTimeout(popupTimeout.current);
+                    }
+                  }, 60);
+                }}
+              >
+                {/* Accent bar and close button */}
+                <div style={{
+                  width: '100%',
+                  height: 7,
+                  borderTopLeftRadius: 18,
+                  borderTopRightRadius: 18,
+                  background: 'linear-gradient(90deg, #2563eb 0%, #00c6fb 100%)',
+                  marginBottom: 0,
+                }} />
+                <button
+                  onClick={() => { setHoveredCase(null); setPopupLoading(false); setPopupHovered(false); }}
+                  style={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 12,
+                    background: 'none',
+                    border: 'none',
+                    color: '#2563eb',
+                    fontSize: 22,
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    opacity: 0.7,
+                    transition: 'opacity 0.18s',
+                    zIndex: 2,
+                  }}
+                  title="Close"
+                  onMouseEnter={e => e.currentTarget.style.opacity = 1}
+                  onMouseLeave={e => e.currentTarget.style.opacity = 0.7}
+                >×</button>
+                {/* Content */}
+                <div style={{ padding: '18px 22px 0 22px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {popupLoading ? (
+                    <div style={{ width: 260 }}>
+                      <div style={{
+                        width: '100%',
+                        height: 28,
+                        marginBottom: 14,
+                        borderRadius: 24,
+                        background: 'linear-gradient(90deg, #181A1B 0%, #2563eb 100%)',
+                        backgroundSize: '200% 100%',
+                        animation: 'barShimmer 1.2s linear infinite',
+                      }} />
+                      <div style={{
+                        width: '100%',
+                        height: 28,
+                        marginBottom: 14,
+                        borderRadius: 24,
+                        background: 'linear-gradient(90deg, #181A1B 0%, #2563eb 100%)',
+                        backgroundSize: '200% 100%',
+                        animation: 'barShimmer 1.2s linear infinite',
+                        animationDelay: '0.15s',
+                      }} />
+                      <div style={{
+                        width: '70%',
+                        height: 28,
+                        borderRadius: 24,
+                        background: 'linear-gradient(90deg, #181A1B 0%, #2563eb 100%)',
+                        backgroundSize: '200% 100%',
+                        animation: 'barShimmer 1.2s linear infinite',
+                        animationDelay: '0.3s',
+                      }} />
+                      <style>{`
+                        @keyframes barShimmer {
+                          0% { background-position: 200% 0; }
+                          100% { background-position: 0 0; }
+                        }
+                        @keyframes popupSlideIn {
+                          0% { opacity: 0; transform: translateY(18px) scale(0.98); }
+                          100% { opacity: 1; transform: translateY(0) scale(1); }
+                        }
+                      `}</style>
+                    </div>
+                  ) : (
+                    <div style={{
+                      opacity: popupLoading ? 0 : 1,
+                      transition: 'opacity 0.4s',
+                      fontSize: 15.5,
+                      color: '#181A1B',
+                      maxHeight: popupExpanded ? 420 : 180,
+                      overflowY: 'auto',
+                      whiteSpace: 'pre-line',
+                      lineHeight: 1.6,
+                      position: 'relative',
+                    }}>
+                      {/* Show summary, with expand/collapse if long */}
+                      {(() => {
+                        const summary = caseStudySummaries[c] || 'This is a summary of the selected case study.';
+                        const isLong = summary.length > 320;
+                        return (
+                          <>
+                            {isLong && !popupExpanded ? (
+                              <>
+                                {summary.slice(0, 320)}<span style={{ color: '#888' }}>... </span>
+                                <button style={{ color: '#2563eb', background: 'none', border: 'none', fontWeight: 600, cursor: 'pointer', fontSize: 15, padding: 0 }} onClick={() => setPopupExpanded(true)}>Read More</button>
+                              </>
+                            ) : (
+                              <>
+                                {summary}
+                                {isLong && (
+                                  <button style={{ color: '#2563eb', background: 'none', border: 'none', fontWeight: 600, cursor: 'pointer', fontSize: 15, padding: 0, marginLeft: 6 }} onClick={() => setPopupExpanded(false)}>Show Less</button>
+                                )}
+                              </>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </a>
